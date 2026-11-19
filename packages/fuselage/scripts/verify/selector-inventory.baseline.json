@@ -55,8 +55,6 @@
 		"apps/meteor/server/routes/avatar/middlewares/browserVersion.ts: .rcx-button {",
 		"apps/meteor/server/routes/avatar/middlewares/browserVersion.ts: .rcx-button--primary {",
 		"packages/fuselage/src/components/ButtonGroup/ButtonGroup.styles.scss: > .rcx-button--square {",
-		"packages/fuselage/src/components/SplitButton/SplitButton.styles.scss: > .rcx-button {",
-		"packages/fuselage/src/components/SplitButton/SplitButton.styles.scss: > .rcx-button.rcx-split-button__trigger {",
 		"packages/fuselage/src/styles/mixins/button.scss: .rcx-button--content {",
 		"packages/fuselage/src/styles/normalize.scss: a:where(:not(.rcx-button, .rcx-item, .rcx-item__link)) {",
 		"packages/ui-conference/src/preflight/PreflightDeviceMenuButton.tsx: & > .rcx-button--content {",
