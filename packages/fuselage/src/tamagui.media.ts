@@ -4,6 +4,9 @@
  * from a group, `'@narrow/itemGroup'`, never from the viewport.
  */
 export const media = {
+	/** The `sm` and `md` breakpoints of `@rocket.chat/fuselage-tokens`. */
+	sm: { minWidth: 600 },
+	md: { minWidth: 768 },
 	/** The main pointer is a finger: targets need more room. */
 	pointerCoarse: { pointer: 'coarse' },
 	/** Nothing hovers: what a hover reveals is shown. */
