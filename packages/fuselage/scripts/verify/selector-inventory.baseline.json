@@ -114,8 +114,5 @@
 	],
 	"rcx-input-box": [
 		"packages/fuselage/src/components/Select/Select.styles.scss: @extend .rcx-input-box__addon;"
-	],
-	"rcx-divider": [
-		"packages/fuselage/src/components/Sidepanel/Sidepanel.styles.scss: &.rcx-divider {"
 	]
 }
