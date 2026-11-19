@@ -13,7 +13,7 @@ const loginCallback = sandbox.stub();
 const loginErrorCallback = sandbox.stub();
 
 const { configureOAuthServices } = p.noCallThru().load('./configureOAuthServices.ts', {
-	'meteor/accounts-base': { Accounts: { updateOrCreateUserFromExternalService } },
+	'../auth/updateOrCreateUserFromExternalService': { updateOrCreateUserFromExternalService },
 	'passport': { use: sandbox.stub(), unuse: sandbox.stub(), authenticate },
 	'./allowPassportOAuthMiddleware': { allowPassportOAuthMiddleware: () => sandbox.stub() },
 	'./passportOAuthCallback': { passportOAuthCallback: () => loginCallback, passportOAuthErrorCallback: () => loginErrorCallback },

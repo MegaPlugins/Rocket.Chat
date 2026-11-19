@@ -7,7 +7,7 @@ import sinon from 'sinon';
 const updateOrCreateUserFromExternalService = sinon.stub();
 
 const { verifyFunction } = p.noCallThru().load('./verifyFunction.ts', {
-	'meteor/accounts-base': { Accounts: { updateOrCreateUserFromExternalService } },
+	'../auth/updateOrCreateUserFromExternalService': { updateOrCreateUserFromExternalService },
 });
 
 describe('verifyFunction', () => {
