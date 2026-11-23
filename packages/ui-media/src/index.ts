@@ -11,6 +11,7 @@ export { usePlayMediaStream } from './streams/usePlayMediaStream';
 export { default as StreamVideo } from './streams/StreamVideo';
 export type { StreamVideoProps } from './streams/StreamVideo';
 export { useAudioLevel } from './streams/useAudioLevel';
+export { useFullscreenToggle } from './fullscreen/useFullscreenToggle';
 export { default as ActionButton } from './components/ActionButton';
 export type { ActionButtonProps } from './components/ActionButton';
 export { default as ToggleButton } from './components/ToggleButton';
