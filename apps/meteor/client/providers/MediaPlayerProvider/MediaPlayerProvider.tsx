@@ -116,7 +116,7 @@ const MediaPlayerProvider = ({ children }: MediaPlayerProviderProps) => {
 
 	const retry = useStableCallback(() => {
 		const audio = audioRef.current;
-		if (!audio || !trackRef.current) {
+		if (!audio || !track) {
 			return;
 		}
 		setError(false);
@@ -161,7 +161,7 @@ const MediaPlayerProvider = ({ children }: MediaPlayerProviderProps) => {
 				onPlaying={() => setLoading(false)}
 				onError={() => {
 					// An error arriving after close() belongs to no track.
-					if (trackRef.current) {
+					if (track) {
 						setLoading(false);
 						setError(true);
 					}

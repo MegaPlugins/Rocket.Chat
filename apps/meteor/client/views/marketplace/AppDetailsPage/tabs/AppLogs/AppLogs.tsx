@@ -3,6 +3,7 @@ import { Pagination, Stack } from '@rocket.chat/fuselage';
 import { CustomScrollbars, usePagination, GenericNoResults, GenericError } from '@rocket.chat/ui-client';
 import { useRouter } from '@rocket.chat/ui-contexts';
 import { useEffect, useMemo, useReducer } from 'react';
+import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import AppLogsItem from './AppLogsItem';
@@ -44,14 +45,13 @@ function expandedReducer(
 export type AppLogsProps = { id: string };
 
 const AppLogs = ({ id }: AppLogsProps) => {
-	'use no memo';
 	const { t } = useTranslation();
 
 	const router = useRouter();
 
 	const { instanceId: instanceLogsFilter } = router.getSearchParameters();
 
-	const { watch, setValue } = useAppLogsFilterFormContext();
+	const { control, setValue } = useAppLogsFilterFormContext();
 
 	useEffect(() => {
 		if (instanceLogsFilter) {
@@ -59,7 +59,7 @@ const AppLogs = ({ id }: AppLogsProps) => {
 		}
 	}, [instanceLogsFilter, setValue]);
 
-	const { startTime, endTime, startDate, endDate, event, severity, instance } = watch();
+	const { startTime, endTime, startDate, endDate, event, severity, instance } = useWatch({ control });
 
 	const query = {
 		...(instance !== 'all' && { instanceId: instance }),
