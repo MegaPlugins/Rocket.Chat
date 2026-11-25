@@ -1,0 +1,108 @@
+name: FansClube - Build Docker Image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fansclube-docker-7-0-4
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'MegaPlugins/Rocket.Chat'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    outputs:
+      source_sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fansclube-historical-import-7.0.4
+          persist-credentials: false
+      - name: Verify source version
+        id: source
+        run: |
+          test "$(node -p "require('./package.json').version")" = "7.0.4"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          df -h
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.17.0'
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: '1.37.1'
+      - name: Install build tools
+        run: |
+          corepack enable
+          corepack prepare yarn@4.5.0 --activate
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3 pkg-config
+          curl --fail --silent --show-error --location https://install.meteor.com/?release=3.0.3 | sh
+          echo "$HOME/.meteor" >> "$GITHUB_PATH"
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Build workspace packages
+        run: yarn build
+      - name: Compile Rocket.Chat
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+          METEOR_DISABLE_OPTIMISTIC_CACHING: '1'
+        run: |
+          yarn build:ci
+          test -f /tmp/dist/bundle/main.js
+      - name: Package build
+        run: tar -C /tmp/dist -czf /tmp/fansclube-bundle.tar.gz bundle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fansclube-bundle
+          path: /tmp/fansclube-bundle.tar.gz
+          retention-days: 3
+          compression-level: 0
+
+  publish:
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.source_sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: fansclube-bundle
+          path: /tmp/fansclube-artifact
+      - name: Build image using upstream 7.0.4 Debian Dockerfile
+        env:
+          SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
+        run: |
+          mkdir -p /tmp/fansclube-image
+          tar -xzf /tmp/fansclube-artifact/fansclube-bundle.tar.gz -C /tmp/fansclube-image
+          docker build --build-arg DENO_VERSION=1.37.1 \
+            --label "org.opencontainers.image.source=https://github.com/MegaPlugins/Rocket.Chat" \
+            --label "org.opencontainers.image.revision=$SOURCE_SHA" \
+            -f apps/meteor/.docker/Dockerfile.debian \
+            -t "ghcr.io/megaplugins/rocket.chat:7.0.4-fansclube-$SOURCE_SHA" /tmp/fansclube-image
+          docker run --rm --entrypoint node "ghcr.io/megaplugins/rocket.chat:7.0.4-fansclube-$SOURCE_SHA" --version
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish immutable source tag
+        env:
+          SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
+        run: |
+          IMAGE=ghcr.io/megaplugins/rocket.chat
+          TAG=7.0.4-fansclube-$SOURCE_SHA
+          docker push "$IMAGE:$TAG"
+          docker tag "$IMAGE:$TAG" "$IMAGE:7.0.4-fansclube"
+          docker push "$IMAGE:7.0.4-fansclube"
+          echo "Image: $IMAGE:$TAG" >> "$GITHUB_STEP_SUMMARY"
+          echo "Build only; integration tests and deployment are separate." >> "$GITHUB_STEP_SUMMARY"
