@@ -24,6 +24,7 @@ import { saveRoomSettings } from '../../../channel-settings/server/methods/saveR
 import { createDiscussion } from '../../../discussion/server/methods/createDiscussion';
 import { FileUpload } from '../../../file-upload/server';
 import { sendFileMessage } from '../../../file-upload/server/methods/sendFileMessage';
+import { authorizeFansClubeHistoricalTimestamp } from '../../../lib/server/methods/fansClubeHistoricalTimestamp';
 import { leaveRoomMethod } from '../../../lib/server/methods/leaveRoom';
 import { applyAirGappedRestrictionsValidation } from '../../../license/server/airGappedRestrictionsWrapper';
 import { settings } from '../../../settings/server';
@@ -177,6 +178,13 @@ API.v1.addRoute(
 			}
 
 			const { fields } = file;
+			const historicalTimestamp = fields.ts === undefined
+				? undefined
+				: await authorizeFansClubeHistoricalTimestamp(this.userId, this.urlParams.rid, fields.ts);
+			delete fields.ts;
+			if (historicalTimestamp && (fields.tmid || fields.t)) {
+				throw new Meteor.Error('error-invalid-params', 'Historical import supports ordinary channel messages only');
+			}
 			let { fileBuffer } = file;
 
 			const details = {
@@ -201,7 +209,7 @@ API.v1.addRoute(
 			delete fields.description;
 
 			await applyAirGappedRestrictionsValidation(() =>
-				sendFileMessage(this.userId, { roomId: this.urlParams.rid, file: uploadedFile, msgData: fields }),
+				sendFileMessage(this.userId, { roomId: this.urlParams.rid, file: uploadedFile, msgData: fields }, { parseAttachmentsForE2EE: true, historicalTimestamp }),
 			);
 
 			const message = await Messages.getMessageByFileIdAndUsername(uploadedFile._id, this.userId);
