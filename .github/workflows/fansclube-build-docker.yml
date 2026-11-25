@@ -2,6 +2,11 @@ name: FansClube - Build Docker Image
 
 on:
   workflow_dispatch:
+    inputs:
+      reuse_build:
+        description: 'Reuse successful build #2 (no recompilation)'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -12,7 +17,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.repository == 'MegaPlugins/Rocket.Chat'
+    if: github.repository == 'MegaPlugins/Rocket.Chat' && !inputs.reuse_build
     runs-on: ubuntu-22.04
     timeout-minutes: 180
     outputs:
@@ -74,30 +79,34 @@ jobs:
 
   publish:
     needs: build
+    if: ${{ always() && github.repository == 'MegaPlugins/Rocket.Chat' && ((inputs.reuse_build && needs.build.result == 'skipped') || needs.build.result == 'success') }}
     runs-on: ubuntu-22.04
     timeout-minutes: 90
     permissions:
       contents: read
+      actions: read
       packages: write
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.build.outputs.source_sha }}
+          ref: ${{ inputs.reuse_build && github.sha || needs.build.outputs.source_sha }}
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: fansclube-bundle
           path: /tmp/fansclube-artifact
-      - name: Build image using upstream 7.0.4 Debian Dockerfile
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.reuse_build && '45643865083' || github.run_id }}
+      - name: Build image using FansClube Bookworm Dockerfile
         env:
-          SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
+          SOURCE_SHA: ${{ inputs.reuse_build && '422538b2e8f48c0a743889f0bac45fce007ad34c' || needs.build.outputs.source_sha }}
         run: |
           mkdir -p /tmp/fansclube-image
           tar -xzf /tmp/fansclube-artifact/fansclube-bundle.tar.gz -C /tmp/fansclube-image
           docker build --build-arg DENO_VERSION=1.37.1 \
             --label "org.opencontainers.image.source=https://github.com/MegaPlugins/Rocket.Chat" \
             --label "org.opencontainers.image.revision=$SOURCE_SHA" \
-            -f apps/meteor/.docker/Dockerfile.debian \
+            -f apps/meteor/.docker/Dockerfile.fansclube \
             -t "ghcr.io/megaplugins/rocket.chat:7.0.4-fansclube-$SOURCE_SHA" /tmp/fansclube-image
           docker run --rm --entrypoint node "ghcr.io/megaplugins/rocket.chat:7.0.4-fansclube-$SOURCE_SHA" --version
       - uses: docker/login-action@v3
@@ -107,7 +116,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish immutable source tag
         env:
-          SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
+          SOURCE_SHA: ${{ inputs.reuse_build && '422538b2e8f48c0a743889f0bac45fce007ad34c' || needs.build.outputs.source_sha }}
         run: |
           IMAGE=ghcr.io/megaplugins/rocket.chat
           TAG=7.0.4-fansclube-$SOURCE_SHA
