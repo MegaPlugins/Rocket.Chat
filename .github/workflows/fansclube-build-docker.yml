@@ -43,7 +43,17 @@ jobs:
           curl --fail --silent --show-error --location https://install.meteor.com/?release=3.0.3 | sh
           echo "$HOME/.meteor" >> "$GITHUB_PATH"
       - name: Install dependencies
-        run: yarn install --immutable
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
+        run: |
+          yarn install
+          git diff --stat -- yarn.lock
+          git diff -- yarn.lock > /tmp/fansclube-lockfile.diff
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fansclube-lockfile-diff
+          path: /tmp/fansclube-lockfile.diff
+          retention-days: 7
       - name: Build workspace packages
         run: yarn build
       - name: Compile Rocket.Chat
