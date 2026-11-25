@@ -18,6 +18,7 @@ import { canSendMessageAsync } from '../../../authorization/server/functions/can
 import { hasPermissionAsync } from '../../../authorization/server/functions/hasPermission';
 import { deleteMessageValidatingPermission } from '../../../lib/server/functions/deleteMessage';
 import { processWebhookMessage } from '../../../lib/server/functions/processWebhookMessage';
+import { authorizeFansClubeHistoricalTimestamp } from '../../../lib/server/methods/fansClubeHistoricalTimestamp';
 import { executeSendMessage } from '../../../lib/server/methods/sendMessage';
 import { executeUpdateMessage } from '../../../lib/server/methods/updateMessage';
 import { applyAirGappedRestrictionsValidation } from '../../../license/server/airGappedRestrictionsWrapper';
@@ -219,8 +220,14 @@ API.v1.addRoute(
 				throw new Error("Cannot send system messages using 'chat.sendMessage'");
 			}
 
+			const historicalTimestamp = this.bodyParams.fansclubeHistoricalImport === true
+				? await authorizeFansClubeHistoricalTimestamp(this.userId, this.bodyParams.message.rid, this.bodyParams.message.ts)
+				: undefined;
+			if (historicalTimestamp && (this.bodyParams.message.tmid || this.bodyParams.message.t || this.bodyParams.message.tshow)) {
+				throw new Meteor.Error('error-invalid-params', 'Historical import supports ordinary channel messages only');
+			}
 			const sent = await applyAirGappedRestrictionsValidation(() =>
-				executeSendMessage(this.userId, this.bodyParams.message as Pick<IMessage, 'rid'>, this.bodyParams.previewUrls),
+				executeSendMessage(this.userId, this.bodyParams.message as Pick<IMessage, 'rid'>, this.bodyParams.previewUrls, historicalTimestamp),
 			);
 			const [message] = await normalizeMessagesForUser([sent], this.userId);
 
