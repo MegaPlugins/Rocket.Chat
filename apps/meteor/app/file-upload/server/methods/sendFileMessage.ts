@@ -161,8 +161,10 @@ export const sendFileMessage = async (
 	},
 	{
 		parseAttachmentsForE2EE,
+		historicalTimestamp,
 	}: {
 		parseAttachmentsForE2EE: boolean;
+		historicalTimestamp?: Date;
 	} = {
 		parseAttachmentsForE2EE: true,
 	},
@@ -206,7 +208,7 @@ export const sendFileMessage = async (
 
 	const data = {
 		rid: roomId,
-		ts: new Date(),
+		ts: historicalTimestamp ?? new Date(),
 		...(msgData as Partial<IMessage>),
 		...(msgData?.customFields && { customFields: JSON.parse(msgData.customFields) }),
 		msg: msgData?.msg ?? '',
@@ -220,7 +222,7 @@ export const sendFileMessage = async (
 		data.attachments = attachments;
 	}
 
-	const msg = await executeSendMessage(userId, data);
+	const msg = await executeSendMessage(userId, data, undefined, historicalTimestamp);
 
 	callbacks.runAsync('afterFileUpload', { user, room, message: msg });
 
