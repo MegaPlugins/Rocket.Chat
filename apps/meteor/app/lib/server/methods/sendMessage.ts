@@ -19,7 +19,7 @@ import { MessageTypes } from '../../../ui-utils/server';
 import { sendMessage } from '../functions/sendMessage';
 import { RateLimiter } from '../lib';
 
-export async function executeSendMessage(uid: IUser['_id'], message: AtLeast<IMessage, 'rid'>, previewUrls?: string[]) {
+export async function executeSendMessage(uid: IUser['_id'], message: AtLeast<IMessage, 'rid'>, previewUrls?: string[], historicalTimestamp?: Date) {
 	if (message.tshow && !message.tmid) {
 		throw new Meteor.Error('invalid-params', 'tshow provided but missing tmid', {
 			method: 'sendMessage',
@@ -32,7 +32,9 @@ export async function executeSendMessage(uid: IUser['_id'], message: AtLeast<IMe
 		});
 	}
 
-	if (message.ts) {
+	if (historicalTimestamp) {
+		message.ts = historicalTimestamp;
+	} else if (message.ts) {
 		const tsDiff = Math.abs(moment(message.ts).diff(Date.now()));
 		if (tsDiff > 60000) {
 			throw new Meteor.Error('error-message-ts-out-of-sync', 'Message timestamp is out of sync', {
