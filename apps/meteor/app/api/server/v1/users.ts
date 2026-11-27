@@ -634,6 +634,13 @@ API.v1.addRoute(
 				return API.v1.failure('Logged in users can not register again.');
 			}
 
+			const rawPhone = typeof this.bodyParams.phone === 'string' ? this.bodyParams.phone.trim() : '';
+			const phoneDigits = rawPhone.replace(/\D/g, '');
+			if (rawPhone && (phoneDigits.length < 7 || phoneDigits.length > 15 || !/^\+?[0-9().\-\s]+$/.test(rawPhone))) {
+				return API.v1.failure('The phone number provided is not valid');
+			}
+			const normalizedPhone = rawPhone ? `${rawPhone.startsWith('+') ? '+' : ''}${phoneDigits}` : undefined;
+
 			if (params.name && !validateNameChars(params.name)) {
 				return API.v1.failure('Name contains invalid characters');
 			}
@@ -659,6 +666,10 @@ API.v1.addRoute(
 				...params,
 				...(secretURL && { secretURL }),
 			});
+
+			if (normalizedPhone) {
+				await Users.saveUserById(userId, { phone: normalizedPhone });
+			}
 
 			// Now set their username
 			const { fields } = await this.parseJsonQuery();

@@ -11,6 +11,7 @@ export type UserRegisterParamsPOST = {
 	pass: string;
 	secret?: string;
 	reason?: string;
+	phone?: string;
 	customFields?: object;
 };
 
@@ -38,6 +39,10 @@ const UserRegisterParamsPostSchema = {
 		reason: {
 			type: 'string',
 			nullable: true,
+		},
+		phone: {
+			type: 'string',
+			maxLength: 32,
 		},
 		customFields: {
 			type: 'object',
