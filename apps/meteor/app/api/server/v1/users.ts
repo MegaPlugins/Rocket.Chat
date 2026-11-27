@@ -628,13 +628,13 @@ API.v1.addRoute(
 	},
 	{
 		async post() {
-			const { secret: secretURL, ...params } = this.bodyParams;
+			const { secret: secretURL, phone: rawPhoneParam, ...params } = this.bodyParams;
 
 			if (this.userId) {
 				return API.v1.failure('Logged in users can not register again.');
 			}
 
-			const rawPhone = typeof this.bodyParams.phone === 'string' ? this.bodyParams.phone.trim() : '';
+			const rawPhone = typeof rawPhoneParam === 'string' ? rawPhoneParam.trim() : '';
 			const phoneDigits = rawPhone.replace(/\D/g, '');
 			if (rawPhone && (phoneDigits.length < 7 || phoneDigits.length > 15 || !/^\+?[0-9().\-\s]+$/.test(rawPhone))) {
 				return API.v1.failure('The phone number provided is not valid');
